@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 
 function App() {
   const [startTime, setStartTime] = useState(0);
+  const [textSearch, setTextSearch] = useState("");
   const [listChecked, setListChecked] = useState({});
   const [listCollapse, setListCollapse] = useState({});
 
@@ -19,7 +20,11 @@ function App() {
   }, []);
 
   const AddNewTask = () => {
-    const idIndex = listTask.length > 0? listTask[listTask.length-1].id + 1 : 1
+    let idIndex = 1;
+    if(listTask.length > 0){
+      const indexNumber = Object.keys(listTask).reduce((a, b) => listTask[a].id > listTask[b].id ? a : b);
+      idIndex = listTask[indexNumber].id + 1
+    }
     let taskItem = {...itemTask, id: idIndex}
     let taskList = [...listTask, taskItem];
     let dataSort = taskList.sort((a,b) => (a.date > b.date) ? 1 : ((b.date > a.date) ? -1 : 0));
@@ -28,7 +33,7 @@ function App() {
     setItemTask({piority: "normal", date: startTime});
   }
 
-  const updateListCollapse = (idData) => {
+  const updateCollapse = (idData) => {
       setListCollapse({...listCollapse, [idData]: listCollapse[idData]? !listCollapse[idData] : true})
   }
 
@@ -48,8 +53,6 @@ function App() {
 
   const removeItemTask = (arrayIdData) =>{
     const dataList = listTask.filter((item) => !arrayIdData.includes(item.id))
-
-    console.log(dataList, arrayIdData);
     setListTask([...dataList]);
     
     arrayIdData.forEach(function(idData) {
@@ -57,6 +60,8 @@ function App() {
         delete listCollapse[idData];
       if(listTaskUpdate[idData])
         delete listTaskUpdate[idData];
+      if(listChecked[idData])
+        delete listChecked[idData];
     })
   }
 
@@ -66,23 +71,28 @@ function App() {
     setListTaskUpdate({...listTaskUpdate});
   }
 
-  const UpdateTask = (index, idData, listData) => {
+  const UpdateTaskItem = (index, idData, listData) => {
     listTask[index]= listData[idData];
-    setListTask([...listTask]);
+    let dataSort = listTask.sort((a,b) => (a.date > b.date) ? 1 : ((b.date > a.date) ? -1 : 0))
+    setListTask([...dataSort]);
   }
 
   const itemContent = () => {
-    return listTask.map((data, index) => (
+    let listDataTask = listTask;
+    if(textSearch !== "") {
+      listDataTask = listTask.filter((item) => item.title.includes(textSearch));
+    }
+
+    return listDataTask.map((data, index) => (
       <div className="task-item" key={data.id}>
-        {console.log("xem nao ", listTaskUpdate)}
         <div className="task-item__info d-flex">
-          <div className="d-flex">
+          <div className="d-flex flex-align-center">
             <input type="checkbox" id={`"item-"${data.id}`} onClick={()=>handleChecked(data.id)}/>
             <label htmlFor={`"item-"${data.id}`}> {data.title}</label>
           </div>
           <div className="d-flex">
             <div className="p-2">
-              <button className="button-blue" onClick={()=>updateListCollapse(data.id)}>Detail</button>
+              <button className="button-blue" onClick={()=>updateCollapse(data.id)}>Detail</button>
             </div>
             <div className="p-2">
               <button className="button-red" onClick={()=>removeItemTask([data.id])}>Remove</button>
@@ -116,7 +126,7 @@ function App() {
             </div>
           </div>
           <div className="py-5">
-            <button className="button-green" onClick={()=>UpdateTask(index, data.id, listTaskUpdate)}>Update</button>
+            <button className="button-green" onClick={()=>UpdateTaskItem(index, data.id, listTaskUpdate)}>Update</button>
           </div>
         </div>
       </div>
@@ -162,7 +172,7 @@ function App() {
           <div className="col">
             <h2 className="text-center">To Do List</h2>
             <div className="block-content">              
-              <input className="form-control search-task" type="text" placeholder="Search..." />
+              <input className="form-control search-task" type="text" placeholder="Search..." onChange={(e)=>{setTextSearch(e.target.value)}}/>
               
               <div className="list-task">
                 {listTask.length >0  && itemContent()}
@@ -170,7 +180,7 @@ function App() {
 
              </div>
             </div>
-            {Object.keys(listChecked).length > 0 ? <div className="bottom-action d-flex bg-gray mt-5">
+            {Object.values(listChecked).filter(item=>item).length > 0 ? <div className="bottom-action d-flex bg-gray mt-5">
               <div>Bulk Action</div>
               <div className="d-flex">
                 <div className="p-2">
