@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 
 function App() {
   const [startTime, setStartTime] = useState(0);
+  const [listChecked, setListChecked] = useState({});
   const [listCollapse, setListCollapse] = useState({});
 
   const [listTask, setListTask] = useState([]);
@@ -18,19 +19,46 @@ function App() {
   }, []);
 
   const AddNewTask = () => {
-    let taskItem = {...itemTask, id: listTask.length + 1}
+    const idIndex = listTask.length > 0? listTask[listTask.length-1].id + 1 : 1
+    let taskItem = {...itemTask, id: idIndex}
     let taskList = [...listTask, taskItem];
     let dataSort = taskList.sort((a,b) => (a.date > b.date) ? 1 : ((b.date > a.date) ? -1 : 0));
 
     setListTask([...dataSort]);
-    setItemTask({piority: "normal"});
+    setItemTask({piority: "normal", date: startTime});
   }
 
   const updateListCollapse = (idData) => {
       setListCollapse({...listCollapse, [idData]: listCollapse[idData]? !listCollapse[idData] : true})
   }
 
-  console.log("haha ", listCollapse);
+  const handleChecked = (idData) =>{
+    setListChecked({...listChecked, [idData]: listChecked[idData]? !listChecked[idData] : true})
+  }
+
+  const removeTaskChecked = () =>{
+    const listID =[]
+    Object.keys(listChecked).forEach(function(key) {
+      if(listChecked[key]){
+        listID.push(+key);
+      }
+    });
+    removeItemTask(listID);
+  }
+
+  const removeItemTask = (arrayIdData) =>{
+    const dataList = listTask.filter((item) => !arrayIdData.includes(item.id))
+
+    console.log(dataList, arrayIdData);
+    setListTask([...dataList]);
+    
+    arrayIdData.forEach(function(idData) {
+      if(listCollapse[idData])
+        delete listCollapse[idData];
+      if(listTaskUpdate[idData])
+        delete listTaskUpdate[idData];
+    })
+  }
 
   const onChangeUpdate = (index, idData, fieldName, valueData) => {
     const dataDefault = listTaskUpdate[idData]? listTaskUpdate[idData] : listTask[index];
@@ -39,7 +67,7 @@ function App() {
   }
 
   const UpdateTask = (index, idData, listData) => {
-    listTask[idData]= listData[index];
+    listTask[index]= listData[idData];
     setListTask([...listTask]);
   }
 
@@ -49,15 +77,15 @@ function App() {
         {console.log("xem nao ", listTaskUpdate)}
         <div className="task-item__info d-flex">
           <div className="d-flex">
-            <input type="checkbox" id="item1" name="item1" value="item1"/>
-            <label htmlFor="item1"> {data.title}</label>
+            <input type="checkbox" id={`"item-"${data.id}`} onClick={()=>handleChecked(data.id)}/>
+            <label htmlFor={`"item-"${data.id}`}> {data.title}</label>
           </div>
           <div className="d-flex">
             <div className="p-2">
               <button className="button-blue" onClick={()=>updateListCollapse(data.id)}>Detail</button>
             </div>
             <div className="p-2">
-              <button className="button-red">Remove</button>
+              <button className="button-red" onClick={()=>removeItemTask([data.id])}>Remove</button>
             </div>
           </div>
         </div>
@@ -142,17 +170,17 @@ function App() {
 
              </div>
             </div>
-            <div className="bottom-action d-flex bg-gray mt-5">
+            {Object.keys(listChecked).length > 0 ? <div className="bottom-action d-flex bg-gray mt-5">
               <div>Bulk Action</div>
               <div className="d-flex">
                 <div className="p-2">
                   <button className="button-blue">Done</button>
                 </div>
                 <div className="p-2">
-                  <button className="button-red">Remove</button>
+                  <button className="button-red" onClick={()=>removeTaskChecked()}>Remove</button>
                 </div>
               </div>
-            </div>
+            </div> : null}
         </div>
     </div>
   );
